@@ -1,4 +1,5 @@
 
+Aquí tienes el código completo con toda la sección de la canción y el reproductor eliminados.
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
@@ -131,30 +132,9 @@
         }
     </style>
 </head>
-<body class="font-sans text-gray-800 relative pb-28 selection:bg-amber-300">
+<body class="font-sans text-gray-800 relative pb-12 selection:bg-amber-300">
 
     <canvas id="petalCanvas"></canvas>
-
-    <!-- Contenedor Oculto de YouTube API -->
-    <div style="display: none;">
-        <div id="youtube-player"></div>
-    </div>
-
-    <div id="audioBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md glass-card rounded-full px-5 py-3 flex items-center justify-between shadow-2xl border border-amber-300 transition-all duration-500">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 flex items-center justify-center text-amber-950 shadow-inner">
-                <i class="fa-solid fa-compact-disc animate-spin text-lg" id="discSpinner" style="animation-duration: 4s; animation-play-state: paused;"></i>
-            </div>
-            <div>
-                <p class="text-xs font-bold text-amber-950">Música: Flores Amarillas</p>
-                <p class="text-[11px] text-amber-800/80 font-medium" id="audioStatusText">Presiona para reproducir</p>
-            </div>
-        </div>
-
-        <button onclick="toggleMusic()" class="w-11 h-11 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-full flex items-center justify-center shadow-md active:scale-90 transition cursor-pointer">
-            <i class="fa-solid fa-play text-base pl-0.5" id="musicBarIcon"></i>
-        </button>
-    </div>
 
     <div id="welcomeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-amber-950/70 backdrop-blur-md transition-opacity duration-700">
         <div class="glass-card max-w-lg w-full rounded-3xl p-8 text-center shadow-2xl border-2 border-goldBright">
@@ -167,12 +147,12 @@
             </h2>
             
             <p class="text-amber-900/90 text-sm sm:text-base mb-6 leading-relaxed font-medium">
-                Hoy 21 de septiembre celebramos el Día de las Flores Amarillas. Toca el botón para hacer florecer tu regalo y encender la música.
+                Hoy 21 de septiembre celebramos el Día de las Flores Amarillas. Toca el botón para hacer florecer tu regalo.
             </p>
 
             <button onclick="startExperience()" class="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-amber-950 font-extrabold text-lg py-4 px-8 rounded-full shadow-xl transform transition active:scale-95 flex items-center justify-center space-x-3 cursor-pointer">
                 <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
-                <span>Abrir Flor y Escuchar Música</span>
+                <span>Abrir Flor</span>
             </button>
         </div>
     </div>
@@ -286,7 +266,7 @@
             <h3 class="font-serif text-xl sm:text-2xl text-amber-950 font-bold mb-2">
                 🌟 Mensaje de Amistad del Día
             </h3>
-            <p class="text-xs sm:text-sm text-gray-600 mb-4">Haz clic abajo para descubrir una linda deducción preparada con mucho cariño:</p>
+            <p class="text-xs sm:text-sm text-gray-600 mb-4">Haz clic abajo para descubrir una linda dedicatoria preparada con mucho cariño:</p>
 
             <div class="bg-amber-50/90 border-2 border-dashed border-amber-300 rounded-2xl p-6 mb-5 min-h-[100px] flex items-center justify-center shadow-inner">
                 <p id="phraseBox" class="font-hand text-2xl sm:text-3xl text-amber-950 font-bold transition-opacity duration-300">
@@ -319,75 +299,7 @@
     </main>
 
     <script>
-        // --- 1. YouTube Iframe Player API Integration ---
-        let ytPlayer = null;
-        let isPlaying = false;
-
-        // Cargar dinámicamente la API de Iframe de YouTube
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-        function onYouTubeIframeAPIReady() {
-            ytPlayer = new YT.Player('youtube-player', {
-                height: '0',
-                width: '0',
-                videoId: '0k5iI471O3M', // ID de la canción "Flores Amarillas"
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 0,
-                    'autoplay': 0
-                },
-                events: {
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.PLAYING) {
-                isPlaying = true;
-                updateMusicUI(true);
-            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                isPlaying = false;
-                updateMusicUI(false);
-            }
-        }
-
-        function toggleMusic() {
-            if (!ytPlayer || typeof ytPlayer.playVideo !== 'function') return;
-
-            if (isPlaying) {
-                ytPlayer.pauseVideo();
-            } else {
-                ytPlayer.playVideo();
-            }
-        }
-
-        function startMusic() {
-            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                ytPlayer.playVideo();
-            }
-        }
-
-        function updateMusicUI(active) {
-            const musicBarIcon = document.getElementById('musicBarIcon');
-            const discSpinner = document.getElementById('discSpinner');
-            const audioStatusText = document.getElementById('audioStatusText');
-
-            if (active) {
-                if (musicBarIcon) musicBarIcon.className = "fa-solid fa-pause text-base";
-                if (discSpinner) discSpinner.style.animationPlayState = "running";
-                if (audioStatusText) audioStatusText.innerText = "Reproduciendo de YouTube";
-            } else {
-                if (musicBarIcon) musicBarIcon.className = "fa-solid fa-play text-base pl-0.5";
-                if (discSpinner) discSpinner.style.animationPlayState = "paused";
-                if (audioStatusText) audioStatusText.innerText = "En pausa";
-            }
-        }
-
-        // --- 2. Experiencia de Apertura ---
+        // --- 1. Experiencia de Apertura ---
         const svgSunflower = document.getElementById('svgSunflower');
         let isBloomed = false;
 
@@ -399,7 +311,6 @@
             }, 700);
 
             bloomFlower();
-            startMusic();
         }
 
         function bloomFlower() {
@@ -420,7 +331,7 @@
             }
         }
 
-        // --- 3. Animación de Pétalos Caídos ---
+        // --- 2. Animación de Pétalos Caídos ---
         const canvas = document.getElementById('petalCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -490,7 +401,7 @@
 
         renderCanvas();
 
-        // --- 4. Rotador de Mensajes ---
+        // --- 3. Rotador de Mensajes ---
         const phrases = [
             "“Las mejores amistades son como las flores amarillas: iluminan tus días y florecen en cualquier estación.” 🌻",
             "“Una flor amarilla para alguien que siempre sabe cómo sacarme una sonrisa.” 💛",
@@ -514,3 +425,4 @@
     </script>
 </body>
 </html>
+
