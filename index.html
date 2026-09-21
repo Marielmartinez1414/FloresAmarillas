@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
@@ -137,21 +138,21 @@
     <div id="audioBar" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md glass-card rounded-full px-5 py-3 flex items-center justify-between shadow-2xl border border-amber-300 transition-all duration-500">
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 flex items-center justify-center text-amber-950 shadow-inner">
-                <i class="fa-solid fa-compact-disc animate-spin text-lg" id="discSpinner" style="animation-duration: 4s;"></i>
+                <i class="fa-solid fa-compact-disc animate-spin text-lg" id="discSpinner" style="animation-duration: 4s; animation-play-state: paused;"></i>
             </div>
             <div>
                 <p class="text-xs font-bold text-amber-950">Música: Flores Amarillas</p>
-                <p class="text-[11px] text-amber-800/80 font-medium" id="audioStatusText">Melodía activa</p>
+                <p class="text-[11px] text-amber-800/80 font-medium" id="audioStatusText">Presiona para reproducir</p>
             </div>
         </div>
 
         <button onclick="toggleMusic()" class="w-11 h-11 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-full flex items-center justify-center shadow-md active:scale-90 transition">
-            <i class="fa-solid fa-pause text-base" id="musicBarIcon"></i>
+            <i class="fa-solid fa-play text-base pl-0.5" id="musicBarIcon"></i>
         </button>
     </div>
 
     <div id="welcomeModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-amber-950/70 backdrop-blur-md transition-opacity duration-700">
-        <div class="glass-card max-w-lg w-full rounded-3xl p-8 text-center shadow-2xl border-2 border-goldBright animate-bounce-short">
+        <div class="glass-card max-w-lg w-full rounded-3xl p-8 text-center shadow-2xl border-2 border-goldBright">
             <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-tr from-yellow-300 to-amber-400 rounded-full flex items-center justify-center shadow-lg text-4xl">
                 🌻
             </div>
@@ -164,7 +165,7 @@
                 Hoy 21 de septiembre celebramos el Día de las Flores Amarillas. Toca el botón para hacer florecer tu regalo y encender la música.
             </p>
 
-            <button onclick="startExperience()" class="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-amber-950 font-extrabold text-lg py-4 px-8 rounded-full shadow-xl transform transition active:scale-95 flex items-center justify-center space-x-3">
+            <button onclick="startExperience()" class="w-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-amber-950 font-extrabold text-lg py-4 px-8 rounded-full shadow-xl transform transition active:scale-95 flex items-center justify-center space-x-3 cursor-pointer">
                 <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
                 <span>Abrir Flor y Escuchar Música</span>
             </button>
@@ -313,14 +314,12 @@
     </main>
 
     <script>
-
-        // --- 1. Web Audio API Music Synthesizer (100% Reliable without External URLs) ---
+        // --- 1. Web Audio API Engine with Universal Autoplay Unlocking ---
         let audioCtx = null;
         let isPlaying = false;
         let noteIndex = 0;
         let timerId = null;
 
-        // Notes and frequency map for "Flores Amarillas" celebratory melodic loop
         const melody = [
             { note: 'E5', duration: 0.25 },
             { note: 'G5', duration: 0.25 },
@@ -353,7 +352,7 @@
             'G5': 783.99, 'A5': 880.00, 'B5': 987.77, 'C6': 1046.50
         };
 
-        function initAudio() {
+        function ensureAudioContext() {
             if (!audioCtx) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 audioCtx = new AudioContext();
@@ -363,6 +362,15 @@
             }
         }
 
+        // Global unlock listener for touch/click events on any device
+        function unlockAudioOnUserAction() {
+            ensureAudioContext();
+            document.removeEventListener('click', unlockAudioOnUserAction);
+            document.removeEventListener('touchstart', unlockAudioOnUserAction);
+        }
+        document.addEventListener('click', unlockAudioOnUserAction);
+        document.addEventListener('touchstart', unlockAudioOnUserAction);
+
         function playTone(freq, duration) {
             if (!audioCtx || !isPlaying) return;
 
@@ -370,14 +378,13 @@
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
 
-                // Bright warm floral tone (combination of sine & triangle)
                 osc.type = 'triangle';
-                osc.frequency.value = freq;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
                 const now = audioCtx.currentTime;
                 gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.18, now + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
@@ -385,7 +392,7 @@
                 osc.start(now);
                 osc.stop(now + duration);
             } catch (e) {
-                console.log(e);
+                console.warn("Audio playback error:", e);
             }
         }
 
@@ -402,7 +409,7 @@
         }
 
         function startMusic() {
-            initAudio();
+            ensureAudioContext();
             if (!isPlaying) {
                 isPlaying = true;
                 stepMelody();
@@ -417,6 +424,7 @@
         }
 
         function toggleMusic() {
+            ensureAudioContext();
             if (isPlaying) {
                 stopMusic();
             } else {
@@ -445,6 +453,8 @@
         let isBloomed = false;
 
         function startExperience() {
+            ensureAudioContext();
+            
             const modal = document.getElementById('welcomeModal');
             modal.style.opacity = '0';
             setTimeout(() => {
