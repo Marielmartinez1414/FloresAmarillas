@@ -314,266 +314,259 @@
     </main>
 
     <script>
-        // --- 1. Web Audio API Engine with Universal Autoplay Unlocking ---
-        let audioCtx = null;
-        let isPlaying = false;
-        let noteIndex = 0;
-        let timerId = null;
+    // --- 1. Audio Engine con compatibilidad multi-dispositivo ---
+    let audioCtx = null;
+    let isPlaying = false;
+    let noteIndex = 0;
+    let timerId = null;
 
-        const melody = [
-            { note: 'E5', duration: 0.25 },
-            { note: 'G5', duration: 0.25 },
-            { note: 'A5', duration: 0.5 },
-            { note: 'G5', duration: 0.25 },
-            { note: 'E5', duration: 0.25 },
-            { note: 'C5', duration: 0.5 },
-            { note: 'D5', duration: 0.25 },
-            { note: 'E5', duration: 0.25 },
-            { note: 'F5', duration: 0.5 },
-            { note: 'E5', duration: 0.25 },
-            { note: 'D5', duration: 0.25 },
-            { note: 'C5', duration: 0.75 },
-            
-            { note: 'G5', duration: 0.25 },
-            { note: 'A5', duration: 0.25 },
-            { note: 'C6', duration: 0.5 },
-            { note: 'B5', duration: 0.25 },
-            { note: 'A5', duration: 0.25 },
-            { note: 'G5', duration: 0.5 },
-            { note: 'A5', duration: 0.25 },
-            { note: 'G5', duration: 0.25 },
-            { note: 'E5', duration: 0.5 },
-            { note: 'D5', duration: 0.25 },
-            { note: 'C5', duration: 0.75 }
-        ];
+    const melody = [
+        { note: 'E5', duration: 0.25 },
+        { note: 'G5', duration: 0.25 },
+        { note: 'A5', duration: 0.5 },
+        { note: 'G5', duration: 0.25 },
+        { note: 'E5', duration: 0.25 },
+        { note: 'C5', duration: 0.5 },
+        { note: 'D5', duration: 0.25 },
+        { note: 'E5', duration: 0.25 },
+        { note: 'F5', duration: 0.5 },
+        { note: 'E5', duration: 0.25 },
+        { note: 'D5', duration: 0.25 },
+        { note: 'C5', duration: 0.75 },
+        { note: 'G5', duration: 0.25 },
+        { note: 'A5', duration: 0.25 },
+        { note: 'C6', duration: 0.5 },
+        { note: 'B5', duration: 0.25 },
+        { note: 'A5', duration: 0.25 },
+        { note: 'G5', duration: 0.5 },
+        { note: 'A5', duration: 0.25 },
+        { note: 'G5', duration: 0.25 },
+        { note: 'E5', duration: 0.5 },
+        { note: 'D5', duration: 0.25 },
+        { note: 'C5', duration: 0.75 }
+    ];
 
-        const noteFreq = {
-            'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46,
-            'G5': 783.99, 'A5': 880.00, 'B5': 987.77, 'C6': 1046.50
-        };
+    const noteFreq = {
+        'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46,
+        'G5': 783.99, 'A5': 880.00, 'B5': 987.77, 'C6': 1046.50
+    };
 
-        function ensureAudioContext() {
-            if (!audioCtx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new AudioContext();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+    function initAudioContext() {
+        if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) {
+                audioCtx = new AudioContextClass();
             }
         }
-
-        // Global unlock listener for touch/click events on any device
-        function unlockAudioOnUserAction() {
-            ensureAudioContext();
-            document.removeEventListener('click', unlockAudioOnUserAction);
-            document.removeEventListener('touchstart', unlockAudioOnUserAction);
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
         }
-        document.addEventListener('click', unlockAudioOnUserAction);
-        document.addEventListener('touchstart', unlockAudioOnUserAction);
+    }
 
-        function playTone(freq, duration) {
-            if (!audioCtx || !isPlaying) return;
+    function playTone(freq, duration) {
+        if (!audioCtx || !isPlaying) return;
 
-            try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
 
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-                const now = audioCtx.currentTime;
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.2, now + 0.04);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            const now = audioCtx.currentTime;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.2, now + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
 
-                osc.start(now);
-                osc.stop(now + duration);
-            } catch (e) {
-                console.warn("Audio playback error:", e);
-            }
+            osc.start(now);
+            osc.stop(now + duration);
+        } catch (e) {
+            console.error("Error al reproducir tono:", e);
         }
+    }
 
-        function stepMelody() {
-            if (!isPlaying) return;
+    function stepMelody() {
+        if (!isPlaying) return;
 
-            const item = melody[noteIndex];
-            if (noteFreq[item.note]) {
-                playTone(noteFreq[item.note], item.duration);
-            }
-
-            noteIndex = (noteIndex + 1) % melody.length;
-            timerId = setTimeout(stepMelody, item.duration * 1000);
+        const item = melody[noteIndex];
+        if (noteFreq[item.note]) {
+            playTone(noteFreq[item.note], item.duration);
         }
 
-        function startMusic() {
-            ensureAudioContext();
-            if (!isPlaying) {
-                isPlaying = true;
-                stepMelody();
-                updateMusicUI(true);
-            }
+        noteIndex = (noteIndex + 1) % melody.length;
+        timerId = setTimeout(stepMelody, item.duration * 1000);
+    }
+
+    function startMusic() {
+        initAudioContext();
+        if (audioCtx) {
+            isPlaying = true;
+            stepMelody();
+            updateMusicUI(true);
         }
+    }
 
-        function stopMusic() {
-            isPlaying = false;
-            if (timerId) clearTimeout(timerId);
-            updateMusicUI(false);
-        }
+    function stopMusic() {
+        isPlaying = false;
+        if (timerId) clearTimeout(timerId);
+        updateMusicUI(false);
+    }
 
-        function toggleMusic() {
-            ensureAudioContext();
-            if (isPlaying) {
-                stopMusic();
-            } else {
-                startMusic();
-            }
-        }
-
-        function updateMusicUI(active) {
-            const musicBarIcon = document.getElementById('musicBarIcon');
-            const discSpinner = document.getElementById('discSpinner');
-            const audioStatusText = document.getElementById('audioStatusText');
-
-            if (active) {
-                musicBarIcon.className = "fa-solid fa-pause text-base";
-                discSpinner.style.animationPlayState = "running";
-                audioStatusText.innerText = "Reproduciendo melodía";
-            } else {
-                musicBarIcon.className = "fa-solid fa-play text-base pl-0.5";
-                discSpinner.style.animationPlayState = "paused";
-                audioStatusText.innerText = "En pausa";
-            }
-        }
-
-        // --- 2. Experience Start & Blooming Logic ---
-        const svgSunflower = document.getElementById('svgSunflower');
-        let isBloomed = false;
-
-        function startExperience() {
-            ensureAudioContext();
-            
-            const modal = document.getElementById('welcomeModal');
-            modal.style.opacity = '0';
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 700);
-
-            bloomFlower();
+    function toggleMusic() {
+        initAudioContext();
+        if (isPlaying) {
+            stopMusic();
+        } else {
             startMusic();
         }
+    }
 
-        function bloomFlower() {
-            svgSunflower.classList.add('flower-bloomed');
-            isBloomed = true;
+    function updateMusicUI(active) {
+        const musicBarIcon = document.getElementById('musicBarIcon');
+        const discSpinner = document.getElementById('discSpinner');
+        const audioStatusText = document.getElementById('audioStatusText');
+
+        if (active) {
+            musicBarIcon.className = "fa-solid fa-pause text-base";
+            discSpinner.style.animationPlayState = "running";
+            audioStatusText.innerText = "Reproduciendo melodía";
+        } else {
+            musicBarIcon.className = "fa-solid fa-play text-base pl-0.5";
+            discSpinner.style.animationPlayState = "paused";
+            audioStatusText.innerText = "En pausa";
+        }
+    }
+
+    // --- 2. Experiencia de Apertura ---
+    const svgSunflower = document.getElementById('svgSunflower');
+    let isBloomed = false;
+
+    function startExperience() {
+        initAudioContext();
+        
+        const modal = document.getElementById('welcomeModal');
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 700);
+
+        bloomFlower();
+        startMusic();
+    }
+
+    function bloomFlower() {
+        svgSunflower.classList.add('flower-bloomed');
+        isBloomed = true;
+    }
+
+    function closeFlower() {
+        svgSunflower.classList.remove('flower-bloomed');
+        isBloomed = false;
+    }
+
+    function toggleBloom() {
+        if (isBloomed) {
+            closeFlower();
+        } else {
+            bloomFlower();
+        }
+    }
+
+    // --- 3. Animación de Pétalos Caídos ---
+    const canvas = document.getElementById('petalCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    class FloatingPetal {
+        constructor() {
+            this.reset();
         }
 
-        function closeFlower() {
-            svgSunflower.classList.remove('flower-bloomed');
-            isBloomed = false;
+        reset() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * -height;
+            this.size = Math.random() * 12 + 8;
+            this.speedY = Math.random() * 1.5 + 0.7;
+            this.speedX = Math.random() * 0.8 - 0.4;
+            this.angle = Math.random() * Math.PI * 2;
+            this.spin = Math.random() * 0.02 - 0.01;
+            const colors = ['#FFD54F', '#FFEE58', '#FFB300', '#FFE082'];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
+            this.opacity = Math.random() * 0.7 + 0.3;
         }
 
-        function toggleBloom() {
-            if (isBloomed) {
-                closeFlower();
-            } else {
-                bloomFlower();
-            }
-        }
+        update() {
+            this.y += this.speedY;
+            this.x += Math.sin(this.angle) * 0.8 + this.speedX;
+            this.angle += this.spin;
 
-        // --- 3. Floating Petals Canvas Background ---
-        const canvas = document.getElementById('petalCanvas');
-        const ctx = canvas.getContext('2d');
-
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
-
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
-
-        class FloatingPetal {
-            constructor() {
+            if (this.y > height + 20) {
                 this.reset();
             }
-
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * -height;
-                this.size = Math.random() * 12 + 8;
-                this.speedY = Math.random() * 1.5 + 0.7;
-                this.speedX = Math.random() * 0.8 - 0.4;
-                this.angle = Math.random() * Math.PI * 2;
-                this.spin = Math.random() * 0.02 - 0.01;
-                const colors = ['#FFD54F', '#FFEE58', '#FFB300', '#FFE082'];
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-                this.opacity = Math.random() * 0.7 + 0.3;
-            }
-
-            update() {
-                this.y += this.speedY;
-                this.x += Math.sin(this.angle) * 0.8 + this.speedX;
-                this.angle += this.spin;
-
-                if (this.y > height + 20) {
-                    this.reset();
-                }
-            }
-
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                ctx.globalAlpha = this.opacity;
-                ctx.fillStyle = this.color;
-
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.bezierCurveTo(-this.size / 2, -this.size / 2, -this.size / 2, this.size / 2, 0, this.size);
-                ctx.bezierCurveTo(this.size / 2, this.size / 2, this.size / 2, -this.size / 2, 0, 0);
-                ctx.fill();
-
-                ctx.restore();
-            }
         }
 
-        const petalsList = Array.from({ length: 35 }, () => new FloatingPetal());
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.angle);
+            ctx.globalAlpha = this.opacity;
+            ctx.fillStyle = this.color;
 
-        function renderCanvas() {
-            ctx.clearRect(0, 0, width, height);
-            petalsList.forEach(petal => {
-                petal.update();
-                petal.draw();
-            });
-            requestAnimationFrame(renderCanvas);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(-this.size / 2, -this.size / 2, -this.size / 2, this.size / 2, 0, this.size);
+            ctx.bezierCurveTo(this.size / 2, this.size / 2, this.size / 2, -this.size / 2, 0, 0);
+            ctx.fill();
+
+            ctx.restore();
         }
+    }
 
-        renderCanvas();
+    const petalsList = Array.from({ length: 35 }, () => new FloatingPetal());
 
-        // --- 4. Wishes Generator ---
-        const phrases = [
-            "“Las mejores amistades son como las flores amarillas: iluminan tus días y florecen en cualquier estación.” 🌻",
-            "“Una flor amarilla para alguien que siempre sabe cómo sacarme una sonrisa.” 💛",
-            "“Que la energía bonita de este 21 de septiembre te acompañe todo el año.” ✨",
-            "“Gracias por ser luz, alegría y buena vibra en mi vida.” 🌼",
-            "“¡Que nunca te falten motivos para brillar con luz propia!” 🌟",
-            "“Hoy celebro tu existencia y lo lindo de nuestra amistad.” 💛"
-        ];
+    function renderCanvas() {
+        ctx.clearRect(0, 0, width, height);
+        petalsList.forEach(petal => {
+            petal.update();
+            petal.draw();
+        });
+        requestAnimationFrame(renderCanvas);
+    }
 
-        let currentPhraseIndex = 0;
-        function nextPhrase() {
-            const phraseBox = document.getElementById('phraseBox');
-            phraseBox.style.opacity = "0";
+    renderCanvas();
 
-            setTimeout(() => {
-                currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
-                phraseBox.innerText = phrases[currentPhraseIndex];
-                phraseBox.style.opacity = "1";
-            }, 300);
-        }
-    </script>
+    // --- 4. Rotador de Mensajes ---
+    const phrases = [
+        "“Las mejores amistades son como las flores amarillas: iluminan tus días y florecen en cualquier estación.” 🌻",
+        "“Una flor amarilla para alguien que siempre sabe cómo sacarme una sonrisa.” 💛",
+        "“Que la energía bonita de este 21 de septiembre te acompañe todo el año.” ✨",
+        "“Gracias por ser luz, alegría y buena vibra en mi vida.” 🌼",
+        "“¡Que nunca te falten motivos para brillar con luz propia!” 🌟",
+        "“Hoy celebro tu existencia y lo lindo de nuestra amistad.” 💛"
+    ];
+
+    let currentPhraseIndex = 0;
+    function nextPhrase() {
+        const phraseBox = document.getElementById('phraseBox');
+        phraseBox.style.opacity = "0";
+
+        setTimeout(() => {
+            currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+            phraseBox.innerText = phrases[currentPhraseIndex];
+            phraseBox.style.opacity = "1";
+        }, 300);
+    }
+</script>
+
 </body>
 </html>
